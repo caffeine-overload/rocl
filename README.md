@@ -28,6 +28,12 @@ Ubuntu: `apt install beignet`
 
 OpenCL is included in the proprietary driver.
 
+## Installing
+
+```
+library(devtools)
+install_github("caffeine-overload/rocl")
+```
 
 
 ## Example Usage
