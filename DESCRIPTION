@@ -1,0 +1,12 @@
+Package: rocl
+Version: 0.1-0
+Title: Low Level OpenCL binding for R
+Author: c-o
+Maintainer: c-o <c-overload@protonmail.com>
+Depends: R (>= 3.0.0)
+Description: Low level bindings to allow the use of OpenCL in R programs. This package is intended for other, higher level packages to make use of to deliver accelerated processing to R users.
+License: GPL-3
+OS_type: unix
+NeedsCompilation: yes
+RoxygenNote: 6.1.0
+Suggests: float
