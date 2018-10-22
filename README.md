@@ -3,7 +3,7 @@
 rocl is an OpenCL binding for R that tries to stay true to the C interface.
 
 This is intended to be a package that is used by other packages to deliver accelerated routines 
-to R end-users without them having to worry about OpenCL programming.
+to R end-users without them having to worry about OpenCL programming. Unless of course said users are familiar with OpenCL.
 
 
 This is still a work in progress, but basic OpenCL workflow already works.

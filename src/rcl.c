@@ -10,6 +10,8 @@
 
 #define __RE(stacknum) ({if(status != CL_SUCCESS){SEXP retval = set_error_info(R_NilValue, status); UNPROTECT( stacknum + 2); return retval;}})
 
+#define Rf_isRaw(thing) ((TYPEOF(thing)) == RAWSXP)
+
 #define __CE if(status != CL_SUCCESS)
 #define __AV(type, len) (PROTECT(allocVector(type, len)))
 #define _l(len) (__AV(VECSXP, len))
@@ -467,7 +469,7 @@ SEXP build_cl_program(SEXP rprog, SEXP options){
     status =  clBuildProgram(*prog, 0, NULL, boptions, NULL, NULL);
     return ScalarInteger((int)status);
 }
-
+  
 SEXP write_buffer(SEXP rq, SEXP rbuf, SEXP rdata, SEXP rblocking, SEXP roffset, SEXP waitlist){
     cl_int status;
     cl_command_queue* q = (cl_command_queue*) R_ExternalPtrAddr(rq);
@@ -477,15 +479,18 @@ SEXP write_buffer(SEXP rq, SEXP rbuf, SEXP rdata, SEXP rblocking, SEXP roffset, 
     size_t offset = (size_t) asInteger(roffset);
     int datalen = Rf_length(rdata);
     size_t datasize;
-
+    
     //If this is an async call, duplicate the vector
     //Not implemented yet
     if(!blocking) Rf_warning("Async not yet implemented");
     if(!Rf_isNull(waitlist)) Rf_warning("Waitlist not yet implemented");
-
+    
     //Extract vector pointer
     const void* hostptr;
-    if(Rf_isInteger(rdata)){
+    if(Rf_isRaw(rdata)){
+      hostptr = RAW(rdata);
+      datasize = datalen;
+    }else if(Rf_isInteger(rdata)){
       hostptr = INTEGER(rdata);
       datasize = 4 * datalen;
     }else if(Rf_isNumeric(rdata)){
@@ -494,12 +499,12 @@ SEXP write_buffer(SEXP rq, SEXP rbuf, SEXP rdata, SEXP rblocking, SEXP roffset, 
     }else{
       hostptr = NULL;
     }
-
+    
     status = clEnqueueWriteBuffer(*q, *buf, CL_TRUE, offset, datasize, hostptr, 0, NULL, NULL);
-
+    
     return ScalarInteger((int)status);
 }
-
+  
 SEXP read_buffer(SEXP rq, SEXP rbuf, SEXP rdestvec, SEXP roffset, SEXP rblocking, SEXP waitlist){
     cl_int status;
     cl_command_queue* q = (cl_command_queue*) R_ExternalPtrAddr(rq);
@@ -508,24 +513,28 @@ SEXP read_buffer(SEXP rq, SEXP rbuf, SEXP rdestvec, SEXP roffset, SEXP rblocking
     size_t offset = (size_t) asInteger(roffset);
     int datalen = Rf_length(rdestvec);
     size_t datasize;
-
+    
     //Not implemented yet
     if(!blocking) Rf_warning("Async not yet implemented");
     if(!Rf_isNull(waitlist)) Rf_warning("Waitlist not yet implemented");
-
+    
     void* dest;
-    if(Rf_isInteger(rdestvec)){
+    if(Rf_isRaw(rdestvec)){
+      dest = RAW(rdestvec);
+      datasize = datalen;
+    }else if(Rf_isInteger(rdestvec)){
       dest = INTEGER(rdestvec);
       datasize = 4 * datalen;
     }else if(Rf_isNumeric(rdestvec)){
       dest = REAL(rdestvec);
       datasize = 8 * datalen;
     }
-
+    
     status = clEnqueueReadBuffer(*q, *buf, CL_TRUE, offset, datasize, dest, 0, NULL, NULL);
-
+    
     return ScalarInteger((int)status);
 }
+  
 
 SEXP release_kernel(SEXP Rptr){
     //printf("Garbage collected kernel");

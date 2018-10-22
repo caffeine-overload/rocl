@@ -278,7 +278,7 @@ cl.build.program <- function(program, options = NULL){
 cl.enqueue.write.buffer <- function(queue, buffer, vector, blocking = T, offset = 0L, waitlist = NULL){
   stopifnot("opencl_command_queue" %in% class(queue), "opencl_buffer" %in% class(buffer),
             class(offset) == "integer", length(offset) == 1)
-  stopifnot(class(vector) %in% c("numeric", "integer", "float32"))
+  stopifnot(class(vector) %in% c("numeric", "integer", "float32", "raw"))
   if(class(vector) == "float32"){
     vector = vector@Data
   }
@@ -305,7 +305,7 @@ cl.enqueue.write.buffer <- function(queue, buffer, vector, blocking = T, offset 
 cl.enqueue.read.buffer <- function(queue, buffer, destination, offset = 0L, blocking = T, waitlist = NULL){
   stopifnot("opencl_command_queue" %in% class(queue), "opencl_buffer" %in% class(buffer),
             class(offset) == "integer", length(offset) == 1)
-  stopifnot(class(destination) %in% c("numeric", "integer", "float32"))
+  stopifnot(class(destination) %in% c("numeric", "integer", "float32", "raw"))
   if(class(destination) == "float32"){
     destination = destination@Data
   }
