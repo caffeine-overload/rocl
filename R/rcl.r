@@ -359,8 +359,8 @@ cl.kernel.getattr <- function(kernel, what){
 #' @param kernel The kernel to execute. An opencl_kernel object
 #' @param dimensions The dimensions of the kernel
 #' @param global_work_size The number of global threads in each dimension
-#' @param arguments A list of kernel arguments. Must be all opencl_buffer objects. Any names are ignored, the arguments
-#' are passed by position.
+#' @param arguments A list of kernel arguments. Must be all opencl_buffer, scalar int, scalar double, scalar float or scalar raw objects. Any names are ignored, the arguments
+#' are passed by position. 
 #' @param local_work_size The number of local threads in each dimension inside a work-group. If left NULL, the OpenCL runtime will pick a value.
 #' @param global_work_offset The starting offset of the global thread ids in each dimension. If left as NULL, defaults to 0 in each dimension.
 #' @param waitlist OpenCL events that must complete before this operation can start.
@@ -377,9 +377,10 @@ cl.enqueue.kernel <- function(queue, kernel, dimensions, global_work_size, argum
             class(dimensions) == "integer",
             class(global_work_size) == "integer",
             class(arguments) == "list",
-            all(sapply(X = arguments, FUN = function(x) class(x) == "opencl_buffer")),
+            all(sapply(X = arguments, FUN = function(x) class(x) %in% c("opencl_buffer", "integer", "raw", "double", "float32"))),
             length(arguments) == kernel$CL_KERNEL_NUM_ARGS,
             length(global_work_size) == dimensions)
+  arguments <- lapply(X = arguments, FUN = function(x) if(class(x) == "float32"){x@Data}else{x})
   
   if(!is.null(local_work_size)) stopifnot(class(local_work_size) == "integer")
   if(!is.null(global_work_offset)) stopifnot(class(global_work_offset) == "integer")
@@ -406,8 +407,8 @@ cl.enqueue.kernel <- function(queue, kernel, dimensions, global_work_size, argum
 #' @param kernel The kernel to execute. An opencl_kernel object
 #' @param dimensions The dimensions of the kernel
 #' @param global_work_size The number of global threads in each dimension
-#' @param arguments A list of kernel arguments. Must be all opencl_buffer objects. Any names are ignored, the arguments
-#' are passed by position.
+#' @param arguments A list of kernel arguments. Must be all opencl_buffer, scalar int, scalar double or scalar raw objects. Any names are ignored, the arguments
+#' are passed by position. Scalar floats shoud have the underlying bits extracted into an int.
 #' @param local_work_size The number of local threads in each dimension inside a work-group. If left NULL, the OpenCL runtime will pick a value.
 #' @param global_work_offset The starting offset of the global thread ids in each dimension.
 #' @param waitlist OpenCL events that must complete before this operation can start.

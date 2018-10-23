@@ -11,6 +11,7 @@
 #define __RE(stacknum) ({if(status != CL_SUCCESS){SEXP retval = set_error_info(R_NilValue, status); UNPROTECT( stacknum + 2); return retval;}})
 
 #define Rf_isRaw(thing) ((TYPEOF(thing)) == RAWSXP)
+#define Rf_isPtr(thing) ((TYPEOF(thing)) == EXTPTRSXP)
 
 #define __CE if(status != CL_SUCCESS)
 #define __AV(type, len) (PROTECT(allocVector(type, len)))
@@ -591,13 +592,13 @@ SEXP get_kernel_property(SEXP rkern, SEXP what){
 
 SEXP enqueue_kern(SEXP rq, SEXP rkern, SEXP rdim, SEXP rglobal_work_size, SEXP r_bufs, SEXP rlocal_work_size, SEXP rglobal_work_offset){
     cl_int status;
-    cl_command_queue* q = (cl_command_queue*) R_ExternalPtrAddr(rq);
+    cl_command_queue* q = (cl_command_queue*) R_ExternalPtrAddr(rq); 
     cl_kernel* kern = (cl_kernel*) R_ExternalPtrAddr(rkern);
     cl_uint work_dim = (cl_uint) asInteger(rdim);
     //int create_event = asLogical(give_event);
 
     size_t global_work_size[(int)work_dim];
-    for(int i = 0; i < work_dim; i++){
+     for(int i = 0; i < work_dim; i++){
         global_work_size[i] = INTEGER(rglobal_work_size)[i];
     }
 
@@ -616,8 +617,23 @@ SEXP enqueue_kern(SEXP rq, SEXP rkern, SEXP rdim, SEXP rglobal_work_size, SEXP r
     }
 
     for(int i = 0; i < Rf_length(r_bufs); i++){
-        cl_mem* buf = R_ExternalPtrAddr(VECTOR_ELT(r_bufs, i));
-        status = clSetKernelArg(*kern, i, sizeof(cl_mem), buf);
+        SEXP local_ele = VECTOR_ELT(r_bufs, i);
+        size_t ss;
+        void* arg;
+        if(Rf_isPtr(local_ele)) {
+            arg = R_ExternalPtrAddr(local_ele);
+            ss = sizeof(cl_mem);
+        }else if(Rf_isRaw(local_ele)){
+            arg = RAW(local_ele);
+            ss = 1;
+        }else if(Rf_isInteger(local_ele)){
+            arg = INTEGER(local_ele);
+            ss = 4;
+        }else if(Rf_isNumeric(local_ele)){
+            arg = REAL(local_ele);
+            ss = 8;
+        }
+        status = clSetKernelArg(*kern, i, ss, arg);
         __RE(0);
     }
 
